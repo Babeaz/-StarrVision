@@ -5,42 +5,30 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const BS_TOKEN = process.env.BS_TOKEN || '';
+const BS_TOKENS = (process.env.BS_TOKEN || '').split(',').map(t => t.trim()).filter(Boolean);
 
 app.use(cors());
 app.use(express.json());
-
-// Sert les fichiers statiques (le site HTML)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Proxy vers l'API Brawl Stars
 app.get('/api/players/:tag', async (req, res) => {
   try {
-    const tag = req.params.tag;
-    const token = BS_TOKEN;
-
-    if (!token) {
-      return res.status(500).json({ error: 'BS_TOKEN non configuré sur le serveur.' });
+    const url = `https://api.brawlstars.com/v1/players/${encodeURIComponent(req.params.tag)}`;
+    let lastErr;
+    for (const token of BS_TOKENS) {
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) return res.json(data);
+      lastErr = data;
     }
-
-    const url = `https://api.brawlstars.com/v1/players/${encodeURIComponent(tag)}`;
-    const response = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return res.status(response.status).json(data);
-    }
-
-    res.json(data);
+    res.status(403).json(lastErr || { error: 'Tous les tokens ont échoué' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Route racine
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
