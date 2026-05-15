@@ -5,7 +5,6 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const BS_TOKENS = (process.env.BS_TOKEN || '').split(',').map(t => t.trim()).filter(Boolean);
 
 app.use(cors());
 app.use(express.json());
@@ -13,17 +12,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/players/:tag', async (req, res) => {
   try {
-    const url = `https://api.brawlstars.com/v1/players/${encodeURIComponent(req.params.tag)}`;
-    let lastErr;
-    for (const token of BS_TOKENS) {
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok) return res.json(data);
-      lastErr = data;
-    }
-    res.status(403).json(lastErr || { error: 'Tous les tokens ont échoué' });
+    const tag = req.params.tag.replace('#', '');
+    const url = `https://api.brawlify.com/v1/players/${encodeURIComponent('#' + tag)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    if (!response.ok) return res.status(response.status).json(data);
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
