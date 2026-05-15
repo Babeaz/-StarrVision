@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brawl Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Exo+2:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --gold: #FFD700;
+    --gold2: #FFA500;
+    --blue: #00BFFF;
+    --purple: #8A2BE2;
+    --bg: #0a0a14;
+    --bg2: #12121f;
+    --bg3: #1a1a2e;
+    --card: #16213e;
+    --border: rgba(255,215,0,0.15);
+    --text: #e8e8f0;
+    --muted: #7a7a9a;
+    --green: #39ff14;
+    --red: #ff4444;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image: radial-gradient(ellipse at 20% 20%, rgba(138,43,226,0.08) 0%, transparent 50%),
+                      radial-gradient(ellipse at 80% 80%, rgba(0,191,255,0.06) 0%, transparent 50%);
+  }
+  h1,h2,h3,h4 { font-family: 'Rajdhani', sans-serif; }
+
+  /* NAV */
+  nav {
+    background: rgba(10,10,20,0.95);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; gap: 0;
+  }
+  .nav-logo {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.5rem; font-weight: 700;
+    color: var(--gold);
+    margin-right: 2rem;
+    padding: 1rem 0;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(255,215,0,0.4);
+  }
+  .nav-logo span { color: var(--blue); }
+  .nav-tab {
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 0.9rem; font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* TOKEN BAR */
+  .token-bar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 2rem;
+    display: flex; align-items: center; gap: 1rem;
+    font-size: 0.8rem;
+  }
+  .token-bar label { color: var(--muted); }
+  .token-bar input {
+    flex: 1; max-width: 500px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); padding: 0.3rem 0.75rem; border-radius: 6px;
+    font-family: monospace; font-size: 0.75rem;
+  }
+  .token-bar input:focus { outline: none; border-color: var(--gold); }
+  .btn-sm {
+    background: var(--gold); color: #000;
+    border: none; padding: 0.35rem 1rem;
+    border-radius: 6px; cursor: pointer;
+    font-family: 'Rajdhani', sans-serif; font-weight: 600;
+    font-size: 0.85rem; transition: all 0.2s;
+  }
+  .btn-sm:hover { background: var(--gold2); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .status-dot.ok { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.err { background: var(--red); }
+
+  /* MAIN */
+  main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .card-gold { border-color: rgba(255,215,0,0.35); }
+
+  /* GRID */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
+  .grid4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; }
+
+  /* INPUTS */
+  .input-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+  .input-group label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .input-group input, .input-group select {
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); padding: 0.6rem 1rem; border-radius: 8px;
+    font-family: 'Exo 2', sans-serif; font-size: 0.95rem;
+    transition: border-color 0.2s;
+  }
+  .input-group input:focus, .input-group select:focus { outline: none; border-color: var(--gold); }
+  .input-group select option { background: var(--bg3); }
+
+  .btn {
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: #000; border: none; padding: 0.75rem 2rem;
+    border-radius: 8px; cursor: pointer;
+    font-family: 'Rajdhani', sans-serif; font-weight: 700;
+    font-size: 1rem; letter-spacing: 1px;
+    transition: all 0.2s; width: 100%;
+  }
+  .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-blue {
+    background: linear-gradient(135deg, var(--blue), #0080ff);
+    color: #fff;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 0.5rem 1.5rem;
+  }
+
+  /* STAT BOXES */
+  .stat-box {
+    background: var(--bg3); border-radius: 10px; padding: 1rem;
+    text-align: center; border: 1px solid var(--border);
+  }
+  .stat-box .val { font-size: 1.8rem; font-weight: 700; color: var(--gold); font-family: 'Rajdhani', sans-serif; }
+  .stat-box .lbl { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 0.2rem; }
+
+  /* PLAYER PROFILE */
+  .player-header {
+    display: flex; align-items: center; gap: 1.5rem;
+    padding-bottom: 1.5rem; margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .player-avatar {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple), var(--blue));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; border: 2px solid var(--gold);
+    box-shadow: 0 0 20px rgba(255,215,0,0.2);
+  }
+  .player-name { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; }
+  .player-tag { color: var(--muted); font-size: 0.9rem; font-family: monospace; }
+  .badge {
+    display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px;
+    font-size: 0.75rem; font-weight: 600; font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.5px;
+  }
+  .badge-gold { background: rgba(255,215,0,0.2); color: var(--gold); border: 1px solid rgba(255,215,0,0.4); }
+  .badge-blue { background: rgba(0,191,255,0.15); color: var(--blue); border: 1px solid rgba(0,191,255,0.3); }
+  .badge-purple { background: rgba(138,43,226,0.2); color: #c084fc; border: 1px solid rgba(138,43,226,0.4); }
+
+  /* TROPHY ICON */
+  .trophy-icon { color: var(--gold); font-size: 1.1rem; }
+
+  /* CHART */
+  .chart-wrap { position: relative; height: 260px; margin-top: 1rem; }
+
+  /* BRAWLER HISTORY TABLE */
+  .brawler-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+  .brawler-table th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+  .brawler-table td { padding: 0.6rem 0.75rem; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .brawler-table tr:hover td { background: rgba(255,215,0,0.03); }
+
+  /* SECTION 2: RACE */
+  .race-container { display: flex; flex-direction: column; gap: 1.5rem; }
+  .race-player-card {
+    background: var(--bg3); border-radius: 12px;
+    border: 1px solid var(--border); overflow: hidden;
+  }
+  .race-header {
+    padding: 1rem 1.25rem;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .race-bar-wrap { padding: 1rem 1.25rem; }
+  .race-bar-track {
+    height: 28px; background: var(--bg); border-radius: 14px;
+    border: 1px solid var(--border); overflow: hidden; position: relative;
+  }
+  .race-bar-fill {
+    height: 100%; border-radius: 14px;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 8px; font-size: 0.75rem; font-weight: 600;
+    transition: width 1s cubic-bezier(.4,0,.2,1);
+    position: relative; min-width: 40px;
+  }
+  .race-bar-fill.p1 { background: linear-gradient(90deg, var(--gold), var(--gold2)); color: #000; }
+  .race-bar-fill.p2 { background: linear-gradient(90deg, var(--blue), #0080ff); color: #fff; }
+  .race-bar-fill.p3 { background: linear-gradient(90deg, #ff6b9d, #c84b9e); color: #fff; }
+  .race-bar-fill.p4 { background: linear-gradient(90deg, #39ff14, #00c851); color: #000; }
+  .race-rank { font-family: 'Rajdhani', sans-serif; font-size: 2.5rem; font-weight: 700; }
+  .rank-1 { color: var(--gold); text-shadow: 0 0 15px rgba(255,215,0,0.5); }
+  .rank-2 { color: var(--blue); }
+  .rank-3 { color: #ff6b9d; }
+  .rank-4 { color: var(--green); }
+  .lead-badge {
+    background: rgba(255,215,0,0.2); color: var(--gold);
+    border: 1px solid rgba(255,215,0,0.4);
+    padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+
+  .race-meta { display: flex; gap: 1rem; font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+  .race-meta strong { color: var(--text); }
+
+  /* SECTION 3: CALC */
+  .calc-result {
+    background: var(--bg3); border: 1px solid rgba(57,255,20,0.3);
+    border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem;
+    display: none;
+  }
+  .calc-result.show { display: block; }
+  .calc-big { font-family: 'Rajdhani', sans-serif; font-size: 3.5rem; font-weight: 700; color: var(--green); line-height: 1; }
+  .calc-sub { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; }
+  .calc-breakdown {
+    margin-top: 1.5rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+  }
+  .mode-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+  .mode-card {
+    background: var(--bg3); border: 2px solid var(--border); border-radius: 10px;
+    padding: 0.75rem; cursor: pointer; text-align: center; transition: all 0.2s;
+  }
+  .mode-card:hover { border-color: rgba(255,215,0,0.4); }
+  .mode-card.selected { border-color: var(--gold); background: rgba(255,215,0,0.05); }
+  .mode-card .mode-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .mode-card .mode-name { font-size: 0.8rem; font-weight: 600; font-family: 'Rajdhani', sans-serif; }
+  .mode-card .mode-gain { font-size: 0.75rem; color: var(--muted); }
+
+  .quick-target {
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--muted); padding: 0.3rem 0.6rem;
+    border-radius: 6px; cursor: pointer; font-size: 0.78rem;
+    font-family: 'Rajdhani', sans-serif; font-weight: 600; letter-spacing: 0.5px;
+    transition: all 0.15s;
+  }
+  .quick-target:hover { border-color: rgba(255,215,0,0.5); color: var(--gold); background: rgba(255,215,0,0.07); }
+  .quick-target.active { border-color: var(--gold); color: var(--gold); background: rgba(255,215,0,0.12); }
+
+  /* SECTION 4: BUILDS */
+  .brawler-search-wrap { position: relative; margin-bottom: 1.5rem; }
+  .brawler-search-wrap input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; }
+  .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 1rem; }
+  .brawler-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+  .brawler-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1rem; cursor: pointer; transition: all 0.2s;
+  }
+  .brawler-card:hover { border-color: rgba(255,215,0,0.4); transform: translateY(-2px); }
+  .brawler-card.selected { border-color: var(--gold); background: rgba(255,215,0,0.04); }
+  .brawler-emoji { font-size: 2.5rem; text-align: center; margin-bottom: 0.5rem; }
+  .brawler-cname { font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 600; text-align: center; }
+  .brawler-class { font-size: 0.75rem; color: var(--muted); text-align: center; }
+
+  .build-detail {
+    background: var(--bg3); border: 1px solid rgba(255,215,0,0.3); border-radius: 12px;
+    padding: 1.5rem; margin-top: 1.5rem; display: none;
+  }
+  .build-detail.show { display: block; }
+  .build-section { margin-bottom: 1.5rem; }
+  .build-section h4 { font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.75rem; }
+  .build-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.75rem 1rem; margin-bottom: 0.5rem;
+    display: flex; align-items: flex-start; gap: 0.75rem;
+  }
+  .build-item-icon { font-size: 1.5rem; flex-shrink: 0; }
+  .build-item-name { font-weight: 600; font-size: 0.95rem; }
+  .build-item-why { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+  .build-tip {
+    background: rgba(0,191,255,0.08); border: 1px solid rgba(0,191,255,0.2);
+    border-radius: 8px; padding: 0.75rem 1rem;
+    font-size: 0.85rem; color: var(--blue); line-height: 1.5;
+    margin-top: 1rem;
+  }
+  .tier-badge {
+    padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700;
+    font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px;
+  }
+  .tier-s { background: rgba(255,215,0,0.2); color: var(--gold); }
+  .tier-a { background: rgba(0,191,255,0.15); color: var(--blue); }
+
+  /* LOADING */
+  .loading {
+    display: none; align-items: center; gap: 0.75rem;
+    color: var(--muted); font-size: 0.9rem; padding: 0.5rem 0;
+  }
+  .loading.show { display: flex; }
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid var(--border);
+    border-top-color: var(--gold); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ERROR */
+  .error-box {
+    background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3);
+    border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.85rem; color: #ff6b6b;
+    display: none; margin-top: 0.75rem;
+  }
+  .error-box.show { display: block; }
+
+  /* SECTION TITLE */
+  .section-title { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .section-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+  /* HELPERS */
+  .mt1 { margin-top: 1rem; }
+  .mt15 { margin-top: 1.5rem; }
+  .mb1 { margin-bottom: 1rem; }
+  .flex { display: flex; }
+  .gap1 { gap: 1rem; }
+  .gap05 { gap: 0.5rem; }
+  .align-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .text-gold { color: var(--gold); }
+  .text-muted { color: var(--muted); }
+  .text-blue { color: var(--blue); }
+  .text-green { color: var(--green); }
+  .text-red { color: var(--red); }
+  .fw700 { font-weight: 700; font-family: 'Rajdhani', sans-serif; }
+
+  /* HISTORY LOG */
+  .history-log {
+    max-height: 200px; overflow-y: auto;
+    background: var(--bg); border-radius: 8px; padding: 0.75rem;
+    border: 1px solid var(--border); font-family: monospace; font-size: 0.78rem;
+  }
+  .history-log .log-entry { padding: 0.2rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .history-log .log-entry:last-child { border-bottom: none; }
+
+  @media (max-width: 768px) {
+    .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
+    nav { overflow-x: auto; }
+    main { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">BRAWL<span>TRACK</span></div>
+  <div class="nav-tab active" onclick="showSection('tracker',this)">📊 Tracker</div>
+  <div class="nav-tab" onclick="showSection('race',this)">🏁 Race Mode</div>
+  <div class="nav-tab" onclick="showSection('calc',this)">🎯 Calculateur</div>
+  <div class="nav-tab" onclick="showSection('builds',this)">⚔️ Builds</div>
+</nav>
+
+<div class="token-bar" style="display:none">
+  <label>Token API :</label>
+  <input type="password" id="apiToken" placeholder="Colle ton token Brawl Stars ici..." />
+  <button class="btn-sm" onclick="saveToken()">Sauvegarder</button>
+  <div class="status-dot" id="tokenStatus"></div>
+  <span id="tokenStatusText" style="color:var(--muted);font-size:0.8rem;"></span>
+</div>
+
+<main>
+
+<!-- ===== SECTION 1: TRACKER ===== -->
+<section class="section active" id="s-tracker">
+  <h2 class="section-title">📊 Suivi de Progression</h2>
+  <p class="section-sub">Récupère les stats de n'importe quel joueur via son tag</p>
+
+  <div class="grid2" style="align-items:start">
+    <div class="card card-gold">
+      <div class="input-group">
+        <label>Tag du joueur (ex: #2PP)</label>
+        <input type="text" id="trackerTag" placeholder="#VOTRE_TAG" />
+      </div>
+      <button class="btn" onclick="fetchPlayer()">Rechercher le joueur</button>
+      <div class="loading" id="trackerLoading"><div class="spinner"></div>Connexion à l'API...</div>
+      <div class="error-box" id="trackerError"></div>
+
+      <div style="margin-top:1.5rem">
+        <h4 style="font-family:Rajdhani;font-size:0.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.75rem">Suivi automatique</h4>
+        <p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem">Enregistre les trophées régulièrement pour construire un historique (stocké localement dans le navigateur)</p>
+        <div class="flex gap05 align-center">
+          <button class="btn btn-outline" onclick="startTracking()" id="btnStartTracking" style="width:auto;font-size:0.85rem;padding:0.4rem 1rem">▶ Démarrer le suivi</button>
+          <button class="btn btn-outline" onclick="stopTracking()" id="btnStopTracking" style="width:auto;font-size:0.85rem;padding:0.4rem 1rem;display:none">⏹ Arrêter</button>
+        </div>
+        <div class="history-log mt1" id="historyLog"><div class="log-entry text-muted">Aucun enregistrement pour l'instant...</div></div>
+      </div>
+    </div>
+
+    <div id="playerProfile" style="display:none">
+      <div class="card card-gold">
+        <div class="player-header">
+          <div class="player-avatar" id="profileAvatar">🤖</div>
+          <div>
+            <div class="player-name" id="profileName">—</div>
+            <div class="player-tag" id="profileTag">—</div>
+            <div style="margin-top:0.5rem;display:flex;gap:0.5rem;flex-wrap:wrap" id="profileBadges"></div>
+          </div>
+        </div>
+        <div class="grid4" id="profileStats"></div>
+      </div>
+
+      <div class="card mt15">
+        <div class="flex justify-between align-center mb1">
+          <h3 style="font-size:1.1rem">Évolution des Trophées</h3>
+          <span style="font-size:0.8rem;color:var(--muted)" id="chartInfo">Données enregistrées localement</span>
+        </div>
+        <div class="chart-wrap"><canvas id="trophyChart"></canvas></div>
+      </div>
+
+      <div class="card mt15">
+        <h3 style="font-size:1.1rem;margin-bottom:1rem">Top Brawlers</h3>
+        <table class="brawler-table">
+          <thead><tr><th>#</th><th>Brawler</th><th>Trophées</th><th>Rang</th><th>Puissance</th></tr></thead>
+          <tbody id="brawlerTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 2: RACE ===== -->
+<section class="section" id="s-race">
+  <h2 class="section-title">🏁 Race Mode</h2>
+  <p class="section-sub">Compare plusieurs joueurs en temps réel vers un objectif commun</p>
+
+  <div class="grid2" style="align-items:start">
+    <div class="card card-gold">
+      <div id="racePlayers">
+        <div class="race-player-input" data-idx="0">
+          <div class="input-group">
+            <label>Joueur 1</label>
+            <input type="text" placeholder="#TAG_JOUEUR_1" class="race-tag" />
+          </div>
+        </div>
+        <div class="race-player-input" data-idx="1">
+          <div class="input-group">
+            <label>Joueur 2</label>
+            <input type="text" placeholder="#TAG_JOUEUR_2" class="race-tag" />
+          </div>
+        </div>
+      </div>
+      <button class="btn-outline btn mt1" onclick="addRacePlayer()" style="width:auto;padding:0.5rem 1.25rem;font-size:0.85rem">+ Ajouter un joueur</button>
+
+      <div class="input-group mt1">
+        <label>🏆 Objectif de trophées</label>
+        <input type="number" id="raceTarget" placeholder="50000" value="50000" />
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:-0.25rem;margin-bottom:0.75rem">
+        <span style="font-size:0.72rem;color:var(--muted);width:100%;text-transform:uppercase;letter-spacing:1px">Raccourcis :</span>
+        <button class="quick-target" onclick="setTarget(10000)">10K</button>
+        <button class="quick-target" onclick="setTarget(20000)">20K</button>
+        <button class="quick-target" onclick="setTarget(30000)">30K</button>
+        <button class="quick-target" onclick="setTarget(40000)">40K</button>
+        <button class="quick-target" onclick="setTarget(50000)">50K</button>
+        <button class="quick-target" onclick="setTarget(60000)">60K</button>
+        <button class="quick-target" onclick="setTarget(70000)">70K</button>
+        <button class="quick-target" onclick="setTarget(80000)">80K</button>
+        <button class="quick-target" onclick="setTarget(90000)">90K</button>
+        <button class="quick-target" onclick="setTarget(100000)">100K</button>
+        <button class="quick-target" onclick="setTarget(125000)">125K</button>
+        <button class="quick-target" onclick="setTarget(150000)">150K</button>
+        <button class="quick-target" onclick="setTarget(175000)">175K</button>
+        <button class="quick-target" onclick="setTarget(200000)">200K</button>
+      </div>
+      <button class="btn btn-blue mt1" onclick="runRace()">Lancer la course</button>
+      <div class="loading" id="raceLoading"><div class="spinner"></div>Récupération des joueurs...</div>
+      <div class="error-box" id="raceError"></div>
+
+      <div style="margin-top:1.5rem">
+        <button class="btn-outline btn" onclick="refreshRace()" id="btnRefreshRace" style="display:none;width:auto;padding:0.5rem 1.25rem;font-size:0.85rem">🔄 Actualiser</button>
+        <span style="font-size:0.75rem;color:var(--muted);margin-left:0.75rem" id="raceLastUpdate"></span>
+      </div>
+    </div>
+
+    <div id="raceResults" style="display:none">
+      <div class="card mb1">
+        <div class="flex justify-between align-center">
+          <div>
+            <div style="font-size:0.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Objectif</div>
+            <div class="fw700 text-gold" style="font-size:1.5rem" id="raceTargetDisplay">—</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:0.8rem;color:var(--muted)">Leader actuel</div>
+            <div class="fw700" style="font-size:1.1rem" id="raceLeaderName">—</div>
+          </div>
+        </div>
+      </div>
+      <div id="racePlayersList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 3: CALCULATEUR ===== -->
+<section class="section" id="s-calc">
+  <h2 class="section-title">🎯 Calculateur de Grind</h2>
+  <p class="section-sub">Combien de games te restent-il pour atteindre ton objectif ?</p>
+
+  <div class="grid2" style="align-items:start">
+    <div class="card card-gold">
+      <div class="input-group">
+        <label>Tes trophées actuels</label>
+        <input type="number" id="calcCurrent" placeholder="39000" />
+      </div>
+      <div class="input-group">
+        <label>Ton objectif</label>
+        <input type="number" id="calcTarget" placeholder="40000" />
+      </div>
+
+      <div style="margin-bottom:1rem">
+        <label style="font-size:0.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:0.5rem">Mode de jeu</label>
+        <div class="mode-grid" id="modeGrid"></div>
+      </div>
+
+      <div class="input-group">
+        <label>Ton taux de victoire estimé (%)</label>
+        <input type="number" id="calcWinrate" placeholder="55" value="55" min="0" max="100" />
+      </div>
+
+      <button class="btn" onclick="calculate()">Calculer</button>
+    </div>
+
+    <div>
+      <div class="calc-result" id="calcResult">
+        <div style="margin-bottom:1rem">
+          <div style="font-size:0.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Victoires nécessaires</div>
+          <div class="calc-big" id="calcWins">—</div>
+          <div class="calc-sub" id="calcMode">—</div>
+        </div>
+        <div class="calc-breakdown" id="calcBreakdown"></div>
+        <div style="margin-top:1.5rem;background:rgba(57,255,20,0.05);border:1px solid rgba(57,255,20,0.2);border-radius:8px;padding:1rem">
+          <div id="calcSummary" style="font-size:0.9rem;line-height:1.8;color:var(--text)"></div>
+        </div>
+      </div>
+
+      <div class="card mt15" id="calcTips" style="display:none">
+        <h3 style="font-size:1rem;margin-bottom:1rem">💡 Conseils de grind</h3>
+        <div id="calcTipsContent" style="font-size:0.85rem;line-height:1.7;color:var(--muted)"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 4: BUILDS ===== -->
+<section class="section" id="s-builds">
+  <h2 class="section-title">⚔️ Meilleurs Builds</h2>
+  <p class="section-sub">Gadget, Pouvoir Star et Gears recommandés pour chaque Brawler</p>
+
+  <div class="brawler-search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="buildSearch" placeholder="Rechercher un brawler... (ex: Shelly, Colt, Leon...)" oninput="filterBrawlers()" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:0.75rem 1rem 0.75rem 2.5rem;border-radius:10px;width:100%;font-family:'Exo 2',sans-serif" />
+  </div>
+
+  <div class="brawler-grid" id="brawlerGrid"></div>
+
+  <div class="build-detail" id="buildDetail">
+    <div class="flex justify-between align-center mb1">
+      <div class="flex align-center gap1">
+        <div id="buildDetailEmoji" style="font-size:2.5rem"></div>
+        <div>
+          <div class="player-name" id="buildDetailName">—</div>
+          <div class="text-muted" style="font-size:0.85rem" id="buildDetailClass">—</div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('buildDetail').classList.remove('show')" class="btn-outline btn" style="width:auto;padding:0.4rem 1rem;font-size:0.85rem">✕ Fermer</button>
+    </div>
+    <div class="grid2" id="buildDetailContent"></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// ==================== STATE ====================
+let API_TOKEN = localStorage.getItem('bs_token') || '';
+let trackingInterval = null;
+let trophyChartInstance = null;
+let currentPlayerData = null;
+let trackedHistory = JSON.parse(localStorage.getItem('bs_history') || '{}');
+let selectedMode = null;
+let raceData = [];
+
+// ==================== TOKEN ====================
+function saveToken() {
+  API_TOKEN = document.getElementById('apiToken').value.trim();
+  localStorage.setItem('bs_token', API_TOKEN);
+  document.getElementById('tokenStatus').className = 'status-dot ok';
+  document.getElementById('tokenStatusText').textContent = 'Token sauvegardé';
+}
+
+if (API_TOKEN) {
+  document.getElementById('apiToken').value = API_TOKEN;
+  document.getElementById('tokenStatus').className = 'status-dot ok';
+  document.getElementById('tokenStatusText').textContent = 'Token chargé';
+}
+
+// ==================== API ====================
+async function bsApi(path) {
+  // Appel via le serveur proxy (pas de problème CORS)
+  const resp = await fetch(`/api${path}`);
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.message || `Erreur API ${resp.status}`);
+  }
+  return resp.json();
+}
+
+function encodeTag(tag) {
+  return encodeURIComponent(tag.startsWith('#') ? tag : '#' + tag);
+}
+
+// ==================== SECTION NAV ====================
+function showSection(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+  el.classList.add('active');
+}
+
+// ==================== SECTION 1: TRACKER ====================
+async function fetchPlayer() {
+  const tagRaw = document.getElementById('trackerTag').value.trim();
+  if (!tagRaw) return;
+  const tag = tagRaw.startsWith('#') ? tagRaw : '#' + tagRaw;
+
+  setLoading('trackerLoading', true);
+  setError('trackerError', '');
+  document.getElementById('playerProfile').style.display = 'none';
+
+  try {
+    const data = await bsApi(`/players/${encodeTag(tag)}`);
+    currentPlayerData = data;
+    renderProfile(data);
+    document.getElementById('playerProfile').style.display = 'block';
+    recordHistory(tag, data.trophies);
+  } catch(e) {
+    setError('trackerError', e.message);
+  } finally {
+    setLoading('trackerLoading', false);
+  }
+}
+
+function renderProfile(d) {
+  document.getElementById('profileName').textContent = d.name || '—';
+  document.getElementById('profileTag').textContent = d.tag || '—';
+  document.getElementById('profileAvatar').textContent = getEmoji(d.name);
+
+  const badges = document.getElementById('profileBadges');
+  badges.innerHTML = '';
+  if (d.club?.name) badges.innerHTML += `<span class="badge badge-blue">🏟 ${d.club.name}</span>`;
+  if (d.highestTrophies) badges.innerHTML += `<span class="badge badge-gold">⭐ Record: ${d.highestTrophies.toLocaleString()}</span>`;
+
+  const stats = document.getElementById('profileStats');
+  stats.innerHTML = `
+    <div class="stat-box"><div class="val">${(d.trophies||0).toLocaleString()}</div><div class="lbl">🏆 Trophées</div></div>
+    <div class="stat-box"><div class="val">${(d['3vs3Victories']||0).toLocaleString()}</div><div class="lbl">⚔️ Victoires 3v3</div></div>
+    <div class="stat-box"><div class="val">${(d.soloVictories||0).toLocaleString()}</div><div class="lbl">👤 Victoires Solo</div></div>
+    <div class="stat-box"><div class="val">${(d.brawlers||[]).length}</div><div class="lbl">🤖 Brawlers</div></div>
+  `;
+
+  renderBrawlerTable(d.brawlers || []);
+  renderTrophyChart(d.tag, d.trophies);
+}
+
+function renderBrawlerTable(brawlers) {
+  const sorted = [...brawlers].sort((a,b) => b.trophies - a.trophies).slice(0, 10);
+  const tbody = document.getElementById('brawlerTableBody');
+  tbody.innerHTML = sorted.map((b, i) => `
+    <tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td class="fw700">${b.name}</td>
+      <td><span class="text-gold">🏆</span> ${b.trophies.toLocaleString()}</td>
+      <td>${'⭐'.repeat(Math.min(b.rank||1, 5))}</td>
+      <td><span class="badge badge-purple">P${b.power}</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderTrophyChart(tag, currentTrophies) {
+  const history = trackedHistory[tag] || [];
+  if (trophyChartInstance) trophyChartInstance.destroy();
+
+  const ctx = document.getElementById('trophyChart').getContext('2d');
+  const labels = history.length > 1
+    ? history.map(h => new Date(h.ts).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))
+    : ['Précédent', 'Maintenant'];
+  const values = history.length > 1
+    ? history.map(h => h.val)
+    : [currentTrophies - 100, currentTrophies];
+
+  trophyChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Trophées',
+        data: values,
+        borderColor: '#FFD700',
+        backgroundColor: 'rgba(255,215,0,0.08)',
+        borderWidth: 2,
+        pointBackgroundColor: '#FFD700',
+        pointRadius: 4,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#7a7a9a', maxTicksLimit: 6 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#7a7a9a' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+  document.getElementById('chartInfo').textContent = `${history.length} point(s) enregistré(s)`;
+}
+
+function recordHistory(tag, trophies) {
+  if (!trackedHistory[tag]) trackedHistory[tag] = [];
+  trackedHistory[tag].push({ ts: Date.now(), val: trophies });
+  if (trackedHistory[tag].length > 200) trackedHistory[tag] = trackedHistory[tag].slice(-200);
+  localStorage.setItem('bs_history', JSON.stringify(trackedHistory));
+
+  const log = document.getElementById('historyLog');
+  const time = new Date().toLocaleTimeString('fr-FR');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry text-green';
+  entry.textContent = `[${time}] ${tag} → ${trophies.toLocaleString()} trophées`;
+  log.insertBefore(entry, log.firstChild);
+  if (log.children.length > 30) log.removeChild(log.lastChild);
+}
+
+function startTracking() {
+  const tagRaw = document.getElementById('trackerTag').value.trim();
+  if (!tagRaw || !currentPlayerData) { alert('Cherche d\'abord un joueur !'); return; }
+  document.getElementById('btnStartTracking').style.display = 'none';
+  document.getElementById('btnStopTracking').style.display = 'inline-block';
+  trackingInterval = setInterval(async () => {
+    try {
+      const tag = tagRaw.startsWith('#') ? tagRaw : '#' + tagRaw;
+      const data = await bsApi(`/players/${encodeTag(tag)}`);
+      recordHistory(tag, data.trophies);
+      renderTrophyChart(tag, data.trophies);
+    } catch(e) { console.error(e); }
+  }, 60000);
+}
+
+function stopTracking() {
+  clearInterval(trackingInterval);
+  document.getElementById('btnStartTracking').style.display = 'inline-block';
+  document.getElementById('btnStopTracking').style.display = 'none';
+}
+
+// ==================== SECTION 2: RACE ====================
+let racePlayerCount = 2;
+const raceColors = ['p1','p2','p3','p4'];
+const raceColorNames = ['#FFD700','#00BFFF','#ff6b9d','#39ff14'];
+
+function addRacePlayer() {
+  if (racePlayerCount >= 4) return;
+  racePlayerCount++;
+  const div = document.createElement('div');
+  div.className = 'race-player-input';
+  div.innerHTML = `<div class="input-group"><label>Joueur ${racePlayerCount}</label><input type="text" placeholder="#TAG_JOUEUR_${racePlayerCount}" class="race-tag" /></div>`;
+  document.getElementById('racePlayers').appendChild(div);
+}
+
+async function runRace() {
+  const tags = [...document.querySelectorAll('.race-tag')].map(i => i.value.trim()).filter(Boolean);
+  if (tags.length < 2) { setError('raceError', 'Ajoute au moins 2 tags de joueurs.'); return; }
+  const target = parseInt(document.getElementById('raceTarget').value) || 50000;
+
+  setLoading('raceLoading', true);
+  setError('raceError', '');
+  document.getElementById('raceResults').style.display = 'none';
+
+  try {
+    raceData = await Promise.all(tags.map(async (tag, i) => {
+      const t = tag.startsWith('#') ? tag : '#' + tag;
+      const d = await bsApi(`/players/${encodeTag(t)}`);
+      return { tag: t, name: d.name, trophies: d.trophies, colorClass: raceColors[i], color: raceColorNames[i] };
+    }));
+    renderRace(raceData, target);
+    document.getElementById('btnRefreshRace').style.display = 'inline-block';
+    document.getElementById('raceLastUpdate').textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR');
+  } catch(e) {
+    setError('raceError', e.message);
+  } finally {
+    setLoading('raceLoading', false);
+  }
+}
+
+function renderRace(players, target) {
+  const sorted = [...players].sort((a,b) => b.trophies - a.trophies);
+  const maxTrophies = Math.max(...players.map(p => p.trophies));
+  const leader = sorted[0];
+
+  document.getElementById('raceTargetDisplay').textContent = target.toLocaleString() + ' 🏆';
+  document.getElementById('raceLeaderName').textContent = leader.name;
+  document.getElementById('raceResults').style.display = 'block';
+
+  const list = document.getElementById('racePlayersList');
+  list.innerHTML = sorted.map((p, i) => {
+    const pct = Math.min((p.trophies / target) * 100, 100);
+    const remaining = Math.max(target - p.trophies, 0);
+    const ahead = i === 0 ? '' : `<span style="color:var(--red);font-size:0.8rem">-${(leader.trophies - p.trophies).toLocaleString()} derrière ${leader.name}</span>`;
+    const done = p.trophies >= target;
+    return `
+    <div class="race-player-card mb1">
+      <div class="race-header">
+        <div class="flex align-center gap1">
+          <div class="race-rank rank-${i+1}">#${i+1}</div>
+          <div>
+            <div class="fw700" style="font-size:1.1rem">${p.name}</div>
+            <div class="text-muted" style="font-size:0.8rem;font-family:monospace">${p.tag}</div>
+          </div>
+        </div>
+        <div class="flex align-center gap1">
+          ${done ? '<span class="lead-badge">✅ OBJECTIF ATTEINT</span>' : (i===0 ? '<span class="lead-badge">👑 EN TÊTE</span>' : '')}
+          <div style="text-align:right">
+            <div class="fw700 text-gold" style="font-size:1.2rem">${p.trophies.toLocaleString()}</div>
+            <div style="font-size:0.75rem;color:var(--muted)">trophées</div>
+          </div>
+        </div>
+      </div>
+      <div class="race-bar-wrap">
+        <div class="race-bar-track">
+          <div class="race-bar-fill ${p.colorClass}" style="width:${Math.max(pct,2)}%">${Math.round(pct)}%</div>
+        </div>
+        <div class="race-meta mt1">
+          ${done ? '<span style="color:var(--green)">Objectif atteint ! 🎉</span>' : `<span>Reste <strong>${remaining.toLocaleString()}</strong> trophées</span>`}
+          ${ahead}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function refreshRace() {
+  const target = parseInt(document.getElementById('raceTarget').value) || 50000;
+  if (!raceData.length) return;
+  setLoading('raceLoading', true);
+  try {
+    const updated = await Promise.all(raceData.map(async p => {
+      const d = await bsApi(`/players/${encodeTag(p.tag)}`);
+      return { ...p, trophies: d.trophies };
+    }));
+    raceData = updated;
+    renderRace(updated, target);
+    document.getElementById('raceLastUpdate').textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR');
+  } catch(e) { setError('raceError', e.message); }
+  finally { setLoading('raceLoading', false); }
+}
+
+// ==================== SECTION 3: CALCULATOR ====================
+const MODES = [
+  { name: 'Brawl Ball', icon: '⚽', gain: 8, loss: -4, key: 'bb' },
+  { name: 'Gem Grab', icon: '💎', gain: 9, loss: -5, key: 'gg' },
+  { name: 'Showdown', icon: '☠️', gain: 6, loss: -2, key: 'sd', note: 'Solo' },
+  { name: 'Heist', icon: '💰', gain: 9, loss: -4, key: 'hs' },
+  { name: 'Bounty', icon: '🌟', gain: 8, loss: -4, key: 'bo' },
+  { name: 'Hot Zone', icon: '🔥', gain: 9, loss: -5, key: 'hz' },
+  { name: 'Siege', icon: '🏰', gain: 9, loss: -4, key: 'si' },
+  { name: 'Knockout', icon: '🥊', gain: 8, loss: -4, key: 'ko' },
+];
+
+function initModes() {
+  const grid = document.getElementById('modeGrid');
+  grid.innerHTML = MODES.map((m, i) => `
+    <div class="mode-card ${i===0?'selected':''}" onclick="selectMode(${i})">
+      <div class="mode-icon">${m.icon}</div>
+      <div class="mode-name">${m.name}</div>
+      <div class="mode-gain text-green">+${m.gain} victoire</div>
+    </div>
+  `).join('');
+  selectedMode = MODES[0];
+}
+
+function selectMode(idx) {
+  document.querySelectorAll('.mode-card').forEach((c,i) => c.classList.toggle('selected', i===idx));
+  selectedMode = MODES[idx];
+}
+
+function calculate() {
+  const current = parseInt(document.getElementById('calcCurrent').value);
+  const target = parseInt(document.getElementById('calcTarget').value);
+  const winrate = Math.min(Math.max(parseInt(document.getElementById('calcWinrate').value) || 55, 1), 100);
+
+  if (!current || !target || current >= target) {
+    alert('Vérifie les valeurs saisies !'); return;
+  }
+  if (!selectedMode) { alert('Choisis un mode de jeu !'); return; }
+
+  const gap = target - current;
+  const mode = selectedMode;
+  const wr = winrate / 100;
+
+  const winsNeeded = Math.ceil(gap / mode.gain);
+  const netPerGame = (wr * mode.gain) + ((1 - wr) * mode.loss);
+  const totalGames = netPerGame > 0 ? Math.ceil(gap / netPerGame) : 9999;
+  const losses = totalGames - Math.ceil(totalGames * wr);
+  const hours = (totalGames * 4 / 60).toFixed(1);
+
+  document.getElementById('calcWins').textContent = winsNeeded.toLocaleString();
+  document.getElementById('calcMode').textContent = `victoires en ${mode.name} à +${mode.gain} trophées`;
+
+  document.getElementById('calcBreakdown').innerHTML = `
+    <div class="stat-box"><div class="val">${totalGames.toLocaleString()}</div><div class="lbl">Games totales</div></div>
+    <div class="stat-box"><div class="val">${hours}h</div><div class="lbl">Temps estimé</div></div>
+    <div class="stat-box"><div class="val text-red">${Math.max(losses,0).toLocaleString()}</div><div class="lbl">Défaites estimées</div></div>
+  `;
+
+  document.getElementById('calcSummary').innerHTML = `
+    🎯 Tu es à <strong class="text-gold">${current.toLocaleString()}</strong> et tu veux atteindre <strong class="text-gold">${target.toLocaleString()}</strong><br>
+    📊 Il te manque <strong class="text-blue">${gap.toLocaleString()} trophées</strong><br>
+    ${mode.icon} En <strong>${mode.name}</strong> avec <strong class="text-green">${winrate}%</strong> de victoires : environ <strong class="text-gold">${totalGames.toLocaleString()} parties</strong> totales<br>
+    🏆 Si tu ne fais que gagner : <strong>${winsNeeded}</strong> victoires d'affilée
+  `;
+
+  document.getElementById('calcResult').classList.add('show');
+  document.getElementById('calcTips').style.display = 'block';
+  document.getElementById('calcTipsContent').innerHTML = `
+    <p>• <strong>Conseil :</strong> Joue en soirée pour trouver de meilleurs coéquipiers et augmenter ton taux de victoire.</p>
+    <p>• <strong>Fatigue :</strong> Fais des pauses toutes les 10 parties pour garder ta concentration.</p>
+    <p>• <strong>Streak :</strong> Si tu perds 3 fois d'affilée, change de brawler ou de mode.</p>
+    <p>• <strong>Optimal :</strong> En ${mode.name}, privilégie les brawlers tank ou support pour sécuriser les victoires.</p>
+  `;
+}
+
+// ==================== SECTION 4: BUILDS ====================
+const BUILDS = [
+  { name: 'Shelly', emoji: '👩', class: 'Tireur', tier: 'S',
+    gadget: { name: 'Pigeon d\'argile', icon: '🕊️', why: 'Éjecte les ennemis qui s\'approchent, parfait pour le Brawl Ball ou en close range.' },
+    star: { name: 'Pansement', icon: '🩹', why: 'Régénère des PV après chaque élimination, essentiel pour tenir dans les combats prolongés.' },
+    gears: [{ name: 'Vitesse', icon: '💨', why: 'La mobilité est clé pour Shelly en close range.' }, { name: 'Bouclier', icon: '🛡️', why: 'Absorbe les dégâts quand tu rentres en combat.' }],
+    tip: 'Shelly est excellente en Brawl Ball. Reste dans l\'herbe pour surprendre les ennemis et utilise ton Super pour effacer les murs.' },
+  { name: 'Colt', emoji: '🤠', class: 'Tireur', tier: 'A',
+    gadget: { name: 'Chargeur rapide', icon: '🔫', why: 'Recharge instantanée pour un burst de dégâts massif.' },
+    star: { name: 'Steady Hands', icon: '🎯', why: 'Réduit les pénalités de vitesse et améliore la précision.' },
+    gears: [{ name: 'Dégâts', icon: '⚡', why: 'Booste le DPS déjà élevé de Colt.' }, { name: 'Vitesse', icon: '💨', why: 'Permet de mieux se repositionner.' }],
+    tip: 'Colt excelle en Bounty et Heist. Reste à longue portée et vise les brawlers peu blindés.' },
+  { name: 'Leon', emoji: '🦁', class: 'Assassin', tier: 'S',
+    gadget: { name: 'Clone Léon', icon: '🌀', why: 'Crée un leurre pour distraire les ennemis pendant une fuite.' },
+    star: { name: 'Camouflage', icon: '🫥', why: 'Reste invisible plus longtemps après le Super, crucial pour les assassinats.' },
+    gears: [{ name: 'Vitesse', icon: '💨', why: 'Leon doit s\'approcher vite et fuir vite.' }, { name: 'Dégâts', icon: '⚡', why: 'Maximise les dégâts pendant les 4 premières secondes d\'attaque.' }],
+    tip: 'Utilise le Super pour t\'approcher des supports ou des brawlers squishy en priorité. Ne reste jamais en terrain découvert.' },
+  { name: 'Spike', emoji: '🌵', class: 'Légendaire', tier: 'S',
+    gadget: { name: 'Super piques', icon: '🌵', why: 'Crée une zone de contrôle instantanée pour stopper les pushes ennemis.' },
+    star: { name: 'Fertilisant', icon: '🌱', why: 'Régénère des PV dans la zone de Super, transforme Spike en survie.' },
+    gears: [{ name: 'Gadget Charge', icon: '⚡', why: 'Spike est extrêmement dépendant de son gadget.' }, { name: 'Bouclier', icon: '🛡️', why: 'Spike est peu blindé, le bouclier est essentiel.' }],
+    tip: 'En Gem Grab, Spike est presque imbattable. Contrôle le centre avec tes piques et garde tes gemmes en sécurité.' },
+  { name: 'Sandy', emoji: '😴', class: 'Mythique', tier: 'S',
+    gadget: { name: 'Tempête de sable', icon: '🏜️', why: 'Endort tous les ennemis proches instantanément, game-changer en teamfight.' },
+    star: { name: 'Sable mouvant', icon: '🌊', why: 'Accélère les alliés dans la brume, parfait pour le Brawl Ball.' },
+    gears: [{ name: 'Vitesse', icon: '💨', why: 'Sandy doit se repositionner constamment.' }, { name: 'Vision', icon: '👁️', why: 'Compense la faible portée de Sandy en détectant les ennemis dans l\'herbe.' }],
+    tip: 'Sandy est le support n°1 du jeu. En Brawl Ball, utilise le Super pour couvrir toute l\'équipe pendant qu\'ils avancent.' },
+  { name: 'Mortis', emoji: '🧛', class: 'Assassin', tier: 'A',
+    gadget: { name: 'Pelle rapide', icon: '⚰️', why: 'Crée une distance de sécurité ou permet de finisher un ennemi blessé.' },
+    star: { name: 'Seigneur des ténèbres', icon: '🌑', why: 'Vol de vie sur chaque attaque, rend Mortis incroyablement survivant contre les brawlers bas.' },
+    gears: [{ name: 'Vitesse', icon: '💨', why: 'Mortis est déjà rapide mais la Vitesse le rend incontrôlable.' }, { name: 'Dégâts', icon: '⚡', why: 'Augmente le burst sur les brawlers fragiles.' }],
+    tip: 'Mortis contre les brawlers peu manoeuvrables (Barley, Spike, Pam). Évite Frank ou El Primo au corps à corps.' },
+  { name: 'Frank', emoji: '🔨', class: 'Tank', tier: 'A',
+    gadget: { name: 'Battre le sol', icon: '💥', why: 'Inflige des dégâts massifs autour de lui et peut interrompre des actions ennemies.' },
+    star: { name: 'Hardy Hardy', icon: '🪨', why: 'Réduit la durée des étourdissements, critique pour un tank qui doit avancer.' },
+    gears: [{ name: 'Bouclier', icon: '🛡️', why: 'Frank encaisse énormément, le bouclier optimise son rôle tank.' }, { name: 'Dégâts', icon: '⚡', why: 'Maximise la pression en mêlée.' }],
+    tip: 'Frank est le meilleur tank en Siege. Place-toi devant ton équipe et utilise le Super pour étouffer les zones clés.' },
+  { name: 'Piper', emoji: '🌹', class: 'Tireur', tier: 'A',
+    gadget: { name: 'Parapluie', icon: '☂️', why: 'Fuite instantanée et pose de mines, parfait quand les ennemis s\'approchent.' },
+    star: { name: 'Expert en pression', icon: '🎠', why: 'Les mines laissées au saut infligent des dégâts supplémentaires.' },
+    gears: [{ name: 'Vitesse', icon: '💨', why: 'Piper doit sans cesse se repositionner pour maintenir sa portée.' }, { name: 'Bouclier', icon: '🛡️', why: 'Survit mieux si surprise par un assassin.' }],
+    tip: 'En Bounty, Piper est mortelle. Reste en arrière, one-shot les brawlers fragiles et utilise le gadget pour fuir Mortis.' },
+];
+
+let filteredBrawlers = [...BUILDS];
+
+function initBuilds() {
+  renderBrawlerGrid(BUILDS);
+}
+
+function renderBrawlerGrid(brawlers) {
+  const grid = document.getElementById('brawlerGrid');
+  grid.innerHTML = brawlers.map((b, i) => `
+    <div class="brawler-card" onclick="showBuild(${BUILDS.indexOf(b)})">
+      <div class="brawler-emoji">${b.emoji}</div>
+      <div class="brawler-cname">${b.name}</div>
+      <div class="brawler-class">${b.class}</div>
+      <div style="text-align:center;margin-top:0.5rem"><span class="tier-badge tier-${b.tier.toLowerCase()}">Tier ${b.tier}</span></div>
+    </div>
+  `).join('');
+}
+
+function filterBrawlers() {
+  const q = document.getElementById('buildSearch').value.toLowerCase();
+  filteredBrawlers = BUILDS.filter(b => b.name.toLowerCase().includes(q) || b.class.toLowerCase().includes(q));
+  renderBrawlerGrid(filteredBrawlers);
+}
+
+function showBuild(idx) {
+  const b = BUILDS[idx];
+  document.getElementById('buildDetailEmoji').textContent = b.emoji;
+  document.getElementById('buildDetailName').textContent = b.name;
+  document.getElementById('buildDetailClass').textContent = b.class + ' • Tier ' + b.tier;
+
+  document.getElementById('buildDetailContent').innerHTML = `
+    <div>
+      <div class="build-section">
+        <h4>🔧 Gadget recommandé</h4>
+        <div class="build-item">
+          <div class="build-item-icon">${b.gadget.icon}</div>
+          <div>
+            <div class="build-item-name">${b.gadget.name}</div>
+            <div class="build-item-why">${b.gadget.why}</div>
+          </div>
+        </div>
+      </div>
+      <div class="build-section">
+        <h4>⭐ Pouvoir Star</h4>
+        <div class="build-item">
+          <div class="build-item-icon">${b.star.icon}</div>
+          <div>
+            <div class="build-item-name">${b.star.name}</div>
+            <div class="build-item-why">${b.star.why}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="build-section">
+        <h4>⚙️ Gears recommandés</h4>
+        ${b.gears.map(g => `
+          <div class="build-item">
+            <div class="build-item-icon">${g.icon}</div>
+            <div>
+              <div class="build-item-name">${g.name}</div>
+              <div class="build-item-why">${g.why}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="build-tip">💡 ${b.tip}</div>
+    </div>
+  `;
+
+  document.getElementById('buildDetail').classList.add('show');
+  document.getElementById('buildDetail').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ==================== UTILS ====================
+function setLoading(id, show) {
+  document.getElementById(id).classList.toggle('show', show);
+}
+function setError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.toggle('show', !!msg);
+}
+function getEmoji(name) {
+  const emojis = ['🎮','⚡','🔥','💥','🌟','🏆','👑','🎯'];
+  if (!name) return '🤖';
+  return emojis[name.charCodeAt(0) % emojis.length];
+}
+
+// ==================== RACE TARGET SHORTCUTS ====================
+function setTarget(val) {
+  document.getElementById('raceTarget').value = val;
+  document.querySelectorAll('.quick-target').forEach(b => {
+    const txt = b.textContent.trim();
+    const n = txt.endsWith('K') ? parseInt(txt) * 1000 : parseInt(txt);
+    b.classList.toggle('active', n === val);
+  });
+}
+
+// ==================== INIT ====================
+initModes();
+initBuilds();
+</script>
+</body>
+</html>
